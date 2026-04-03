@@ -13,7 +13,3 @@ This project is an AI-based adaptive learning system that personalizes quizzes a
 - Python
 - HTML/CSS/JS
 - SQLite / Firebase
-
-## How to Run
-1. Open index.html
-2. Run backend (if any)
