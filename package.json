@@ -1,0 +1,25 @@
+{
+  "name": "monorepo",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently --kill-others --raw \"npm run dev --prefix apps/web\" \"npm run dev --prefix apps/api\"",
+    "build": "concurrently --raw \"npm run build --prefix apps/web\"",
+    "start": "concurrently --kill-others --raw \"npm run start --prefix apps/api\" \"npm run start --prefix apps/pocketbase\"",
+    "lint": "concurrently --raw \"npm run lint --prefix apps/web\" \"npm run lint --prefix apps/api\""
+  },
+  "devDependencies": {
+    "autoprefixer": "^10.4.27",
+    "concurrently": "^9.1.2",
+    "postcss": "^8.5.8",
+    "tailwindcss": "^4.2.2",
+    "tailwindcss-animate": "^1.0.7"
+  },
+  "workspaces": [
+    "apps/*"
+  ],
+  "dependencies": {
+    "react-router-dom": "^7.14.0",
+    "sonner": "^2.0.7"
+  }
+}
