@@ -11,6 +11,8 @@ import { Helmet } from 'react-helmet';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { Brain, Target, Zap, Activity } from 'lucide-react';
 
+import DashboardHeader from "@/components/DashboardHeader";
+
 const ProgressPage = () => {
 
   const { currentUser } = useAuth();
@@ -152,231 +154,234 @@ const ProgressPage = () => {
 
 
   return (
+    <>
+      <DashboardHeader />
 
-    <div className="container mx-auto px-4 py-8 max-w-7xl">
+      <div className="container mx-auto px-4 py-8 max-w-7xl">
 
-      <Helmet>
-        <title>My Progress - AI Math Tutor</title>
-      </Helmet>
-
-
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold tracking-tight">Learning Progress</h1>
-        <p className="text-muted-foreground mt-2">
-          Track your mastery across all mathematical concepts.
-        </p>
-      </div>
+        <Helmet>
+          <title>My Progress - AI Math Tutor</title>
+        </Helmet>
 
 
-      {/* ---------- QUICK STATS ---------- */}
-
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-
-        <Card>
-          <CardContent className="p-6 flex flex-col items-center text-center space-y-2">
-            <div className="p-3 bg-primary/10 rounded-full text-primary">
-              <Target className="h-6 w-6" />
-            </div>
-
-            <p className="text-sm font-medium text-muted-foreground">Overall Mastery</p>
-
-            <h3 className="text-2xl font-bold">
-              {Math.round(stats.overallProgress)}%
-            </h3>
-          </CardContent>
-        </Card>
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold tracking-tight">Learning Progress</h1>
+          <p className="text-muted-foreground mt-2">
+            Track your mastery across all mathematical concepts.
+          </p>
+        </div>
 
 
-        <Card>
-          <CardContent className="p-6 flex flex-col items-center text-center space-y-2">
-            <div className="p-3 bg-emerald-500/10 rounded-full text-emerald-500">
-              <Brain className="h-6 w-6" />
-            </div>
+        {/* ---------- QUICK STATS ---------- */}
 
-            <p className="text-sm font-medium text-muted-foreground">Quizzes Taken</p>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
 
-            <h3 className="text-2xl font-bold">{stats.totalQuizzes}</h3>
-          </CardContent>
-        </Card>
-
-
-        <Card>
-          <CardContent className="p-6 flex flex-col items-center text-center space-y-2">
-            <div className="p-3 bg-amber-500/10 rounded-full text-amber-500">
-              <Zap className="h-6 w-6" />
-            </div>
-
-            <p className="text-sm font-medium text-muted-foreground">Avg. Score</p>
-
-            <h3 className="text-2xl font-bold">
-              {Math.round(stats.averageScore)}%
-            </h3>
-          </CardContent>
-        </Card>
-
-
-        <Card>
-          <CardContent className="p-6 flex flex-col items-center text-center space-y-2">
-            <div className="p-3 bg-rose-500/10 rounded-full text-rose-500">
-              <Activity className="h-6 w-6" />
-            </div>
-
-            <p className="text-sm font-medium text-muted-foreground">Best Streak</p>
-
-            <h3 className="text-2xl font-bold">{stats.highestStreak}</h3>
-          </CardContent>
-        </Card>
-
-      </div>
-
-
-      {/* ---------- MAIN CONTENT ---------- */}
-
-      <div className="grid lg:grid-cols-3 gap-8">
-
-
-        {/* ---------- CHART ---------- */}
-
-        <Card className="lg:col-span-2">
-
-          <CardHeader>
-            <CardTitle>Concept Mastery Overview</CardTitle>
-            <CardDescription>Your performance across different topics</CardDescription>
-          </CardHeader>
-
-          <CardContent>
-
-            {masteryData.length > 0 ? (
-
-              <div className="h-[400px] w-full">
-
-                <ResponsiveContainer width="100%" height="100%">
-
-                  <BarChart
-                    data={masteryData}
-                    layout="vertical"
-                    margin={{ top: 5, right: 30, left: 40, bottom: 5 }}
-                  >
-
-                    <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="hsl(var(--border))" />
-
-                    <XAxis type="number" domain={[0, 100]} tickFormatter={(val) => `${val}%`} />
-
-                    <YAxis dataKey="concept_name" type="category" width={100} tick={{ fontSize: 12 }} />
-
-                    <Tooltip
-                      cursor={{ fill: 'hsl(var(--muted))' }}
-                      contentStyle={{ borderRadius: '8px', border: '1px solid hsl(var(--border))' }}
-                      formatter={(value) => [`${Math.round(value)}%`, 'Mastery']}
-                    />
-
-                    <Bar dataKey="mastery_percentage" radius={[0, 4, 4, 0]}>
-
-                      {masteryData.map((entry, index) => (
-                        <Cell
-                          key={`cell-${index}`}
-                          fill={getBarColor(entry.mastery_percentage)}
-                        />
-                      ))}
-
-                    </Bar>
-
-                  </BarChart>
-
-                </ResponsiveContainer>
-
+          <Card>
+            <CardContent className="p-6 flex flex-col items-center text-center space-y-2">
+              <div className="p-3 bg-primary/10 rounded-full text-primary">
+                <Target className="h-6 w-6" />
               </div>
 
-            ) : (
+              <p className="text-sm font-medium text-muted-foreground">Overall Mastery</p>
 
-              <div className="h-[400px] flex items-center justify-center text-muted-foreground border-2 border-dashed rounded-xl">
-                No data available yet. Take some quizzes to see your chart!
+              <h3 className="text-2xl font-bold">
+                {Math.round(stats.overallProgress)}%
+              </h3>
+            </CardContent>
+          </Card>
+
+
+          <Card>
+            <CardContent className="p-6 flex flex-col items-center text-center space-y-2">
+              <div className="p-3 bg-emerald-500/10 rounded-full text-emerald-500">
+                <Brain className="h-6 w-6" />
               </div>
 
-            )}
+              <p className="text-sm font-medium text-muted-foreground">Quizzes Taken</p>
 
-          </CardContent>
+              <h3 className="text-2xl font-bold">{stats.totalQuizzes}</h3>
+            </CardContent>
+          </Card>
 
-        </Card>
+
+          <Card>
+            <CardContent className="p-6 flex flex-col items-center text-center space-y-2">
+              <div className="p-3 bg-amber-500/10 rounded-full text-amber-500">
+                <Zap className="h-6 w-6" />
+              </div>
+
+              <p className="text-sm font-medium text-muted-foreground">Avg. Score</p>
+
+              <h3 className="text-2xl font-bold">
+                {Math.round(stats.averageScore)}%
+              </h3>
+            </CardContent>
+          </Card>
 
 
-        {/* ---------- TOPIC BREAKDOWN ---------- */}
+          <Card>
+            <CardContent className="p-6 flex flex-col items-center text-center space-y-2">
+              <div className="p-3 bg-rose-500/10 rounded-full text-rose-500">
+                <Activity className="h-6 w-6" />
+              </div>
 
-        <Card>
+              <p className="text-sm font-medium text-muted-foreground">Best Streak</p>
 
-          <CardHeader>
-            <CardTitle>Topic Breakdown</CardTitle>
-            <CardDescription>Detailed view of your skills</CardDescription>
-          </CardHeader>
+              <h3 className="text-2xl font-bold">{stats.highestStreak}</h3>
+            </CardContent>
+          </Card>
 
-          <CardContent className="space-y-6">
+        </div>
 
-            {masteryData.length > 0 ? (
 
-              masteryData.map((concept) => (
+        {/* ---------- MAIN CONTENT ---------- */}
 
-                <div key={concept.id} className="space-y-2">
+        <div className="grid lg:grid-cols-3 gap-8">
 
-                  <div className="flex justify-between items-center">
 
-                    <span className="font-medium text-sm">
-                      {concept.concept_name}
-                    </span>
+          {/* ---------- CHART ---------- */}
 
-                    <span
-                      className={`px-2 py-0.5 rounded text-xs font-bold ${getMasteryClass(concept.mastery_percentage)}`}
+          <Card className="lg:col-span-2">
+
+            <CardHeader>
+              <CardTitle>Concept Mastery Overview</CardTitle>
+              <CardDescription>Your performance across different topics</CardDescription>
+            </CardHeader>
+
+            <CardContent>
+
+              {masteryData.length > 0 ? (
+
+                <div className="h-[400px] w-full">
+
+                  <ResponsiveContainer width="100%" height="100%">
+
+                    <BarChart
+                      data={masteryData}
+                      layout="vertical"
+                      margin={{ top: 5, right: 30, left: 40, bottom: 5 }}
                     >
-                      {Math.round(concept.mastery_percentage)}%
-                    </span>
 
-                  </div>
+                      <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="hsl(var(--border))" />
 
+                      <XAxis type="number" domain={[0, 100]} tickFormatter={(val) => `${val}%`} />
 
-                  <Progress
-                    value={concept.mastery_percentage}
-                    className="h-2"
-                    indicatorColor={
-                      concept.mastery_percentage >= 85
-                        ? 'bg-emerald-500'
-                        : concept.mastery_percentage >= 70
-                        ? 'bg-amber-500'
-                        : 'bg-rose-500'
-                    }
-                  />
+                      <YAxis dataKey="concept_name" type="category" width={100} tick={{ fontSize: 12 }} />
 
+                      <Tooltip
+                        cursor={{ fill: 'hsl(var(--muted))' }}
+                        contentStyle={{ borderRadius: '8px', border: '1px solid hsl(var(--border))' }}
+                        formatter={(value) => [`${Math.round(value)}%`, 'Mastery']}
+                      />
 
-                  <div className="flex justify-between text-xs text-muted-foreground">
+                      <Bar dataKey="mastery_percentage" radius={[0, 4, 4, 0]}>
 
-                    <span>{concept.attempt_count} attempts</span>
+                        {masteryData.map((entry, index) => (
+                          <Cell
+                            key={`cell-${index}`}
+                            fill={getBarColor(entry.mastery_percentage)}
+                          />
+                        ))}
 
-                    {concept.streak_count > 0 && (
-                      <span className="flex items-center text-amber-600 dark:text-amber-400">
-                        <Zap className="h-3 w-3 mr-1" />
-                        {concept.streak_count} streak
-                      </span>
-                    )}
+                      </Bar>
 
-                  </div>
+                    </BarChart>
+
+                  </ResponsiveContainer>
 
                 </div>
 
-              ))
+              ) : (
 
-            ) : (
+                <div className="h-[400px] flex items-center justify-center text-muted-foreground border-2 border-dashed rounded-xl">
+                  No data available yet. Take some quizzes to see your chart!
+                </div>
 
-              <p className="text-sm text-muted-foreground text-center py-8">
-                Complete lessons to build your mastery profile.
-              </p>
+              )}
 
-            )}
+            </CardContent>
 
-          </CardContent>
+          </Card>
 
-        </Card>
+
+          {/* ---------- TOPIC BREAKDOWN ---------- */}
+
+          <Card>
+
+            <CardHeader>
+              <CardTitle>Topic Breakdown</CardTitle>
+              <CardDescription>Detailed view of your skills</CardDescription>
+            </CardHeader>
+
+            <CardContent className="space-y-6">
+
+              {masteryData.length > 0 ? (
+
+                masteryData.map((concept) => (
+
+                  <div key={concept.id} className="space-y-2">
+
+                    <div className="flex justify-between items-center">
+
+                      <span className="font-medium text-sm">
+                        {concept.concept_name}
+                      </span>
+
+                      <span
+                        className={`px-2 py-0.5 rounded text-xs font-bold ${getMasteryClass(concept.mastery_percentage)}`}
+                      >
+                        {Math.round(concept.mastery_percentage)}%
+                      </span>
+
+                    </div>
+
+
+                    <Progress
+                      value={concept.mastery_percentage}
+                      className="h-2"
+                      indicatorColor={
+                        concept.mastery_percentage >= 85
+                          ? 'bg-emerald-500'
+                          : concept.mastery_percentage >= 70
+                          ? 'bg-amber-500'
+                          : 'bg-rose-500'
+                      }
+                    />
+
+
+                    <div className="flex justify-between text-xs text-muted-foreground">
+
+                      <span>{concept.attempt_count} attempts</span>
+
+                      {concept.streak_count > 0 && (
+                        <span className="flex items-center text-amber-600 dark:text-amber-400">
+                          <Zap className="h-3 w-3 mr-1" />
+                          {concept.streak_count} streak
+                        </span>
+                      )}
+
+                    </div>
+
+                  </div>
+
+                ))
+
+              ) : (
+
+                <p className="text-sm text-muted-foreground text-center py-8">
+                  Complete lessons to build your mastery profile.
+                </p>
+
+              )}
+
+            </CardContent>
+
+          </Card>
+
+        </div>
 
       </div>
-
-    </div>
+    </>
 
   );
 

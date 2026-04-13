@@ -18,6 +18,8 @@ import { Progress } from "@/components/ui/progress";
 import { Helmet } from "react-helmet";
 import { Target, ArrowRight, Dumbbell } from "lucide-react";
 
+import DashboardHeader from "@/components/DashboardHeader";
+
 const PracticeMode = () => {
 
   const { currentUser } = useAuth();
@@ -74,155 +76,159 @@ const PracticeMode = () => {
 
 
   return (
+    <>
+      <DashboardHeader />
 
-    <div className="container mx-auto px-4 py-12 max-w-5xl">
+      <div className="container mx-auto px-4 py-12 max-w-5xl">
 
-      <Helmet>
-        <title>Practice Mode - AI Math Tutor</title>
-      </Helmet>
-
-
-
-      <div className="mb-10 text-center max-w-2xl mx-auto">
-
-        <div className="inline-flex items-center justify-center p-3 bg-primary/10 rounded-2xl mb-4 text-primary">
-          <Dumbbell className="h-8 w-8"/>
-        </div>
-
-        <h1 className="text-4xl font-bold tracking-tight mb-4">
-          Targeted Practice
-        </h1>
-
-        <p className="text-lg text-muted-foreground">
-          Focus on the areas where you need the most improvement. These
-          concepts have been identified by our AI as your best opportunities
-          for growth.
-        </p>
-
-      </div>
+        <Helmet>
+          <title>Practice Mode - AI Math Tutor</title>
+        </Helmet>
 
 
 
-      {loading ? (
+        <div className="mb-10 text-center max-w-2xl mx-auto">
 
-        <div className="grid md:grid-cols-2 gap-6">
+          <div className="inline-flex items-center justify-center p-3 bg-primary/10 rounded-2xl mb-4 text-primary">
+            <Dumbbell className="h-8 w-8"/>
+          </div>
 
-          {[1,2,3,4].map(i => (
-            <Skeleton key={i} className="h-48 rounded-2xl"/>
-          ))}
+          <h1 className="text-4xl font-bold tracking-tight mb-4">
+            Targeted Practice
+          </h1>
+
+          <p className="text-lg text-muted-foreground">
+            Focus on the areas where you need the most improvement. These
+            concepts have been identified by our AI as your best opportunities
+            for growth.
+          </p>
 
         </div>
 
-      ) : weakConcepts.length > 0 ? (
 
-        <div className="grid md:grid-cols-2 gap-6">
 
-          {weakConcepts.map((concept) => (
+        {loading ? (
 
-            <Card
-              key={concept.id}
-              className="flex flex-col h-full border-rose-200 dark:border-rose-900/50 shadow-sm hover:shadow-md transition-all"
-            >
+          <div className="grid md:grid-cols-2 gap-6">
 
-              <CardHeader className="pb-4">
+            {[1,2,3,4].map(i => (
+              <Skeleton key={i} className="h-48 rounded-2xl"/>
+            ))}
 
-                <div className="flex justify-between items-start mb-2">
+          </div>
 
-                  <div className="flex items-center gap-2 text-rose-600 dark:text-rose-400">
+        ) : weakConcepts.length > 0 ? (
 
-                    <Target className="h-5 w-5"/>
+          <div className="grid md:grid-cols-2 gap-6">
 
-                    <span className="text-sm font-semibold uppercase tracking-wider">
-                      Focus Area
+            {weakConcepts.map((concept) => (
+
+              <Card
+                key={concept.id}
+                className="flex flex-col h-full border-rose-200 dark:border-rose-900/50 shadow-sm hover:shadow-md transition-all"
+              >
+
+                <CardHeader className="pb-4">
+
+                  <div className="flex justify-between items-start mb-2">
+
+                    <div className="flex items-center gap-2 text-rose-600 dark:text-rose-400">
+
+                      <Target className="h-5 w-5"/>
+
+                      <span className="text-sm font-semibold uppercase tracking-wider">
+                        Focus Area
+                      </span>
+
+                    </div>
+
+                    <span className="text-2xl font-bold text-foreground">
+                      {Math.round(concept.mastery_percentage)}%
                     </span>
 
                   </div>
 
-                  <span className="text-2xl font-bold text-foreground">
-                    {Math.round(concept.mastery_percentage)}%
-                  </span>
+                  <CardTitle className="text-2xl">
+                    {concept.concept_name}
+                  </CardTitle>
 
-                </div>
-
-                <CardTitle className="text-2xl">
-                  {concept.concept_name}
-                </CardTitle>
-
-              </CardHeader>
+                </CardHeader>
 
 
 
-              <CardContent className="flex-grow flex flex-col justify-between space-y-6">
+                <CardContent className="flex-grow flex flex-col justify-between space-y-6">
 
-                <div className="space-y-2">
+                  <div className="space-y-2">
 
-                  <div className="flex justify-between text-sm text-muted-foreground">
-                    <span>Current Mastery</span>
-                    <span>Goal: 70%+</span>
+                    <div className="flex justify-between text-sm text-muted-foreground">
+                      <span>Current Mastery</span>
+                      <span>Goal: 70%+</span>
+                    </div>
+
+                    <Progress
+                      value={concept.mastery_percentage}
+                      className="h-2"
+                      indicatorColor="bg-rose-500"
+                    />
+
                   </div>
 
-                  <Progress
-                    value={concept.mastery_percentage}
-                    className="h-2"
-                    indicatorColor="bg-rose-500"
-                  />
-
-                </div>
 
 
+                  <Button className="w-full group" size="lg" asChild>
 
-                <Button className="w-full group" size="lg" asChild>
+                    <Link to={`/practice/${encodeURIComponent(concept.concept_name)}`}>
 
-                  <Link to={`/practice/${encodeURIComponent(concept.concept_name)}`}>
+                      Start Practice Session
 
-                    Start Practice Session
+                      <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform"/>
 
-                    <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform"/>
+                    </Link>
 
-                  </Link>
+                  </Button>
 
-                </Button>
+                </CardContent>
 
-              </CardContent>
+              </Card>
 
-            </Card>
+            ))}
 
-          ))}
+          </div>
 
-        </div>
+        ) : (
 
-      ) : (
+          <Card className="text-center py-16 border-dashed bg-muted/30">
 
-        <Card className="text-center py-16 border-dashed bg-muted/30">
+            <CardContent>
 
-          <CardContent>
+              <div className="inline-flex items-center justify-center p-4 bg-emerald-100 dark:bg-emerald-900/30 rounded-full mb-4 text-emerald-600 dark:text-emerald-400">
+                <Target className="h-8 w-8"/>
+              </div>
 
-            <div className="inline-flex items-center justify-center p-4 bg-emerald-100 dark:bg-emerald-900/30 rounded-full mb-4 text-emerald-600 dark:text-emerald-400">
-              <Target className="h-8 w-8"/>
-            </div>
+              <h2 className="text-2xl font-bold mb-2">
+                You're all caught up!
+              </h2>
 
-            <h2 className="text-2xl font-bold mb-2">
-              You're all caught up!
-            </h2>
+              <p className="text-muted-foreground max-w-md mx-auto mb-6">
+                You don't have any weak concepts right now. Keep taking lessons
+                to discover new challenges.
+              </p>
 
-            <p className="text-muted-foreground max-w-md mx-auto mb-6">
-              You don't have any weak concepts right now. Keep taking lessons
-              to discover new challenges.
-            </p>
+              <Button asChild>
+                <Link to="/lessons">
+                  Browse Lessons
+                </Link>
+              </Button>
 
-            <Button asChild>
-              <Link to="/lessons">
-                Browse Lessons
-              </Link>
-            </Button>
+            </CardContent>
 
-          </CardContent>
+          </Card>
 
-        </Card>
+        )}
 
-      )}
-
-    </div>
+      </div>
+    
+    </>
 
   );
 
