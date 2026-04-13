@@ -16,6 +16,9 @@ import ProgressPage from './pages/ProgressPage.jsx';
 import PracticeMode from './pages/PracticeMode.jsx';
 import PracticeSession from './pages/PracticeSession.jsx';
 
+import { seedLessons } from "@/lib/seedLessons";
+seedLessons();
+
 function App() {
   return (
     <Router>
