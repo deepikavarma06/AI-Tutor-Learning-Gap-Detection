@@ -10,6 +10,5 @@ This project is an AI-based adaptive learning system that personalizes quizzes a
 - Personalized recommendations
 
 ## Technologies
-- Python
 - HTML/CSS/JS
-- SQLite / Firebase
+- Firebase
