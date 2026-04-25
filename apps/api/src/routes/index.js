@@ -1,10 +1,13 @@
-import { Router } from 'express';
-import healthCheck from './health-check.js';
+import { Router } from "express";
+import aiRoutes from "./ai.js";
+import quizRoutes from "./quiz.js";
 
 const router = Router();
 
 export default () => {
-    router.get('/health', healthCheck);
 
-    return router;
+  router.use("/ai", aiRoutes);
+  router.use("/quiz", quizRoutes);
+
+  return router;
 };

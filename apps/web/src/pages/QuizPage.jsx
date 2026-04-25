@@ -1,98 +1,157 @@
-import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext.jsx';
-import QuizInterface from '@/components/QuizInterface.jsx';
-import QuizCompletionSummary from '@/components/QuizCompletionSummary.jsx';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Helmet } from 'react-helmet';
-import { toast } from 'sonner';
+import React, { useState, useEffect } from "react";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
+import QuizInterface from "@/components/QuizInterface.jsx";
+import QuizCompletionSummary from "@/components/QuizCompletionSummary.jsx";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Helmet } from "react-helmet";
 
-import { db } from '@/lib/firebase';
-import { doc, getDoc, collection, addDoc } from "firebase/firestore";
+// Firebase and Auth Imports
+import { db } from "@/lib/firebase";
+import { useAuth } from "@/contexts/AuthContext.jsx";
+import { collection, addDoc, doc, setDoc, getDoc, serverTimestamp } from "firebase/firestore";
 
 const QuizPage = () => {
   const { quizId } = useParams();
-  const { currentUser } = useAuth();
   const navigate = useNavigate();
-  
+  const location = useLocation();
+  const { currentUser } = useAuth(); // Crucial for identifying the student
+
+  // Topic passed from lesson page for UI display
+  const topicName = location.state?.topic || quizId;
+
   const [quiz, setQuiz] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
   const [completed, setCompleted] = useState(false);
   const [finalScore, setFinalScore] = useState(0);
 
+  const displayTopicName = location.state?.topicName || quizId;
+
+  // 1. GENERATE QUIZ ON LOAD
   useEffect(() => {
-
-    const fetchQuiz = async () => {
+    const generateQuiz = async () => {
       try {
+        const res = await fetch("http://localhost:3001/quiz/generate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ topic: displayTopicName })
+        });
 
-        const quizRef = doc(db, "quizzes", quizId);
-        const quizSnap = await getDoc(quizRef);
+        const data = await res.json();
+        const quizQuestions = data.questions || data.quiz;
+    
+        // Ensure questions are in object format
+        const parsedQuestions = typeof quizQuestions === "string" 
+          ? JSON.parse(quizQuestions) 
+          : quizQuestions;
 
-        if (!quizSnap.exists()) {
-          throw new Error("Quiz not found");
-        }
+        setQuiz({
+          concept_being_tested: quizId,
+          questions: parsedQuestions
+        });
 
-        const record = {
-          id: quizSnap.id,
-          ...quizSnap.data()
-        };
-
-        if (!record.questions || record.questions.length === 0) {
-          throw new Error("This quiz has no questions.");
-        }
-
-        setQuiz(record);
-
-      } catch (err) {
-        console.error("Error fetching quiz:", err);
-        setError("Failed to load quiz. It may not exist.");
-      } finally {
+        setLoading(false);
+      } catch (error) {
+        console.error("Quiz generation error:", error);
         setLoading(false);
       }
     };
 
-    if (quizId) {
-      fetchQuiz();
+    if (displayTopicName) {
+      generateQuiz();
     }
+  }, [displayTopicName]);
 
-  }, [quizId]);
-
-
-
+  // 2. HANDLE COMPLETION & DATA PERSISTENCE
   const handleQuizComplete = async (answers) => {
+    // Calculate Score
+    const correctCount = answers.filter(a => a.is_correct).length;
+    const score = (correctCount / answers.length) * 100;
+
+    setFinalScore(score);
+    setCompleted(true);
 
     try {
 
-      const correctCount = answers.filter(a => a.is_correct).length;
-      const score = (correctCount / answers.length) * 100;
+      // --- STREAK CALCULATION LOGIC ---
+      const conceptRef = doc(db, "concepts", `${currentUser.uid}_${quizId}`);
+      const conceptSnap = await getDoc(conceptRef);
+      
+      let newStreak = 1;
 
-      setFinalScore(score);
-      setCompleted(true);
+      if (conceptSnap.exists()) {
+        const data = conceptSnap.data();
+        const lastActivity = data.last_updated?.toDate();
+        
+        if (lastActivity) {
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+          
+          const lastDate = new Date(lastActivity);
+          lastDate.setHours(0, 0, 0, 0);
 
-      await addDoc(collection(db, "quiz_attempts"), {
+          const diffInTime = today.getTime() - lastDate.getTime();
+          const diffInDays = Math.round(diffInTime / (1000 * 60 * 60 * 24));
 
+          if (diffInDays === 1) {
+            // Practiced yesterday, increment streak
+            newStreak = (data.streak_count || 0) + 1;
+          } else if (diffInDays === 0) {
+            // Already practiced today, maintain current streak
+            newStreak = data.streak_count || 1;
+          } else {
+            // Missed a day or more, reset to 1
+            newStreak = 1;
+          }
+        }
+      }
+      
+
+      // B. Update/Create Mastery record for "Gap Detection"
+      // Using a unique ID (UID + Topic) ensures only one mastery record per concept
+      await setDoc(conceptRef, {
         student_id: currentUser.uid,
-        quiz_id: quiz.id,
-        answers: answers,
-        score: score,
-        concepts_tested: [quiz.concept_being_tested],
-        created: new Date()
+        concept_name: quizId,
+        mastery_percentage: score,
+        streak_count: newStreak, // Saving the calculated streak
+        last_updated: serverTimestamp()
+      }, { merge: true });
 
+      // A. Save the individual quiz attempt for "Recent Activity"
+      await addDoc(collection(db, "quizzes"), {
+        student_id: currentUser.uid,
+        topic: quizId,
+        topic_name: topicName,
+        score: score,
+        created: serverTimestamp(),
+        answers: answers
       });
 
-      toast.success("Quiz submitted successfully!");
+      console.log(`Saved! New Streak: ${newStreak}`);
+
+      // C. Prepare mistakes for AI Adaptive Analysis
+      const mistakes = answers
+        .filter(a => !a.is_correct)
+        .map(a => ({
+          question: a.question_id,
+          studentAnswer: a.selected_answer_index,
+          correctAnswer: a.correct_answer_index
+        }));
+
+      // Only trigger adaptive logic if there are mistakes
+      if (mistakes.length > 0) {
+        await fetch("http://localhost:3001/api/adaptive-lesson", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ mistakes })
+        });
+      }
 
     } catch (err) {
-
-      console.error("Error saving quiz attempt:", err);
-      toast.error("Failed to save your results. Please check your connection.");
-
+      console.error("Failed to update student profile:", err);
     }
   };
 
-
-
+  // 3. RENDER STATES
   if (loading) {
     return (
       <div className="container mx-auto px-4 py-12 max-w-3xl space-y-8">
@@ -102,51 +161,34 @@ const QuizPage = () => {
     );
   }
 
-
-
-  if (error || !quiz) {
+  if (!quiz) {
     return (
-      <div className="container mx-auto px-4 py-24 text-center">
-        <h2 className="text-2xl font-bold text-destructive mb-4">Oops!</h2>
-        <p className="text-muted-foreground mb-8">{error}</p>
-        <button
-          onClick={() => navigate('/lessons')}
-          className="text-primary hover:underline"
-        >
-          Return to Lessons
-        </button>
+      <div className="text-center mt-20">
+        <h2 className="text-red-500 font-bold text-2xl">Quiz generation failed</h2>
+        <p className="text-gray-500">Please check your backend connection.</p>
       </div>
     );
   }
 
-
-
   return (
-    <div className="min-h-[calc(100vh-4rem)] bg-muted/20 py-12">
-
+    <div className="min-h-screen bg-gray-50 py-12">
       <Helmet>
-        <title>{`Quiz: ${quiz.concept_being_tested} - AI Math Tutor`}</title>
+        <title>{`Quiz: ${topicName}`}</title>
       </Helmet>
 
-      <div className="container mx-auto px-4">
-
+      <div className="container mx-auto px-4 max-w-3xl">
         {!completed ? (
-
           <QuizInterface
             questions={quiz.questions}
             onComplete={handleQuizComplete}
           />
-
         ) : (
-
           <QuizCompletionSummary
             score={finalScore}
-            conceptTested={quiz.concept_being_tested}
+            conceptTested={topicName}
             totalQuestions={quiz.questions.length}
           />
-
         )}
-
       </div>
     </div>
   );

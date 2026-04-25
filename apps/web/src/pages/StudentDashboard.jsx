@@ -8,12 +8,12 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { Helmet } from 'react-helmet';
-import { BookOpen, Target, Trophy, AlertCircle, Sparkles, ArrowRight, Clock, Dumbbell } from 'lucide-react';
+import { BookOpen, Target, Trophy, AlertCircle, Sparkles, ArrowRight, Clock } from 'lucide-react';
 import { collection, query, where, orderBy, limit, getDocs } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 
+import lessonsData from "@/data/math_topics.json";
 import DashboardHeader from "@/components/DashboardHeader";
-
 
 const StudentDashboard = () => {
   const { currentUser } = useAuth();
@@ -23,138 +23,78 @@ const StudentDashboard = () => {
   const [stats, setStats] = useState({
     overallMastery: 0,
     quizzesCompleted: 0,
-    totalQuestions: 0,
     averageScore: 0,
     currentStreak: 0,
     weakConcepts: [],
     recommendedLesson: null,
-    recentAttempts: [],
-    practiceHistory: []
+    recentAttempts: []
   });
 
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
-
+        // 1. Fetch Mastery Records (No limit to get accurate overall average)
         const masteryQuery = query(
-          collection(db, "concept_mastery"),
-          where("student_id", "==", currentUser.uid),
-          orderBy("mastery_percentage")
-        );
-
-        const attemptsQuery = query(
-          collection(db, "quiz_attempts"),
-          where("student_id", "==", currentUser.uid),
-          orderBy("created", "desc"),
-          limit(5)
-        );
-
-        const lessonsQuery = query(
-          collection(db, "lessons")
-        );
-
-        const practiceQuery = query(
-          collection(db, "practice_attempts"),
-          where("student_id", "==", currentUser.uid),
-          orderBy("created", "desc"),
-          limit(5)
-        );
-
-        const allAttemptsQuery = query(
-          collection(db, "quiz_attempts"),
+          collection(db, "concepts"), 
           where("student_id", "==", currentUser.uid)
         );
 
-        const [
-          masterySnap,
-          attemptsSnap,
-          lessonsSnap,
-          practiceSnap,
-          allAttemptsSnap
-        ] = await Promise.all([
+        // 2. Fetch RECENT Quizzes (Limited to 5 for the UI list)
+        const recentAttemptsQuery = query(
+          collection(db, "quizzes"), 
+          where("student_id", "==", currentUser.uid),
+          orderBy("created", "desc"),
+          limit(5)
+        );
+
+        // 3. Fetch ALL Quizzes (To get the total count correctly)
+        const allQuizzesQuery = query(
+          collection(db, "quizzes"),
+          where("student_id", "==", currentUser.uid)
+        );
+
+        const [masterySnap, recentSnap, allQuizzesSnap] = await Promise.all([
           getDocs(masteryQuery),
-          getDocs(attemptsQuery),
-          getDocs(lessonsQuery),
-          getDocs(practiceQuery),
-          getDocs(allAttemptsQuery)
+          getDocs(recentAttemptsQuery),
+          getDocs(allQuizzesQuery)
         ]);
 
-        const masteryRecords = masterySnap.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        }));
+        const masteryRecords = masterySnap.docs.map(doc => doc.data());
+        const recentQuizzes = recentSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        const totalQuizCount = allQuizzesSnap.size;
 
-        const attempts = attemptsSnap.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        }));
+        // CALCULATIONS
+        const overallMastery = masteryRecords.length > 0
+          ? Math.round(
+              masteryRecords.reduce((acc, curr) => acc + (Number(curr.mastery_percentage) || 0), 0) / masteryRecords.length
+            )
+          : 0;
 
-        const lessons = lessonsSnap.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        }));
+        const averageScore = allQuizzesSnap.docs.length > 0
+          ? Math.round(
+              allQuizzesSnap.docs.reduce((acc, curr) => acc + (curr.data().score || 0), 0) / allQuizzesSnap.docs.length
+            )
+          : 0;
 
-        const practiceAttempts = practiceSnap.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        }));
-
-        const allAttempts = allAttemptsSnap.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        }));
-
-        const overallMastery =
-          masteryRecords.length > 0
-            ? Math.round(
-                masteryRecords.reduce(
-                  (acc, curr) => acc + curr.mastery_percentage,
-                  0
-                ) / masteryRecords.length
-              )
-            : 0;
+        const currentStreak = masteryRecords.length > 0 
+          ? Math.max(...masteryRecords.map(m => m.streak_count || 0)) 
+          : 0;
 
         const weakConcepts = masteryRecords
           .filter(r => r.mastery_percentage < 70)
+          .sort((a, b) => a.mastery_percentage - b.mastery_percentage)
           .slice(0, 3);
 
-        const recommendation = getRecommendedLesson(
-          masteryRecords,
-          lessons
-        );
-
-        let totalQuestions = 0;
-        let totalScore = 0;
-
-        allAttempts.forEach(a => {
-          totalQuestions += a.answers?.length || 0;
-          totalScore += a.score;
-        });
-
-        const averageScore =
-          allAttempts.length > 0
-            ? totalScore / allAttempts.length
-            : 0;
-
-        const recentConcept = [...masteryRecords].sort(
-          (a, b) =>
-            new Date(b.updated) - new Date(a.updated)
-        )[0];
-
-        const currentStreak = recentConcept
-          ? recentConcept.streak_count
-          : 0;
+        const recommendation = getRecommendedLesson(masteryRecords, lessonsData);
 
         setStats({
           overallMastery,
-          quizzesCompleted: allAttempts.length,
-          totalQuestions,
+          quizzesCompleted: totalQuizCount,
           averageScore,
           currentStreak,
           weakConcepts,
           recommendedLesson: recommendation,
-          recentAttempts: attempts,
-          practiceHistory: practiceAttempts
+          recentAttempts: recentQuizzes
         });
 
       } catch (error) {
@@ -164,10 +104,7 @@ const StudentDashboard = () => {
       }
     };
 
-    if (currentUser) {
-      fetchDashboardData();
-    }
-
+    if (currentUser) fetchDashboardData();
   }, [currentUser]);
 
   if (loading) {
@@ -186,247 +123,151 @@ const StudentDashboard = () => {
   }
 
   return (
-    <>
+    <div className="min-h-screen bg-slate-50/30 pb-12">
       <DashboardHeader />
-            
       <div className="container mx-auto px-4 py-8 max-w-7xl">
-        <Helmet>
-          <title>Dashboard - AI Math Tutor</title>
-        </Helmet>
+        <Helmet><title>Dashboard - AI Math Tutor</title></Helmet>
 
-        <div className="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">Welcome back, {currentUser?.displayName || 'Student'}!</h1>
-            <p className="text-muted-foreground mt-2">Here's your personalized learning overview.</p>
-          </div>
-          <div className="flex gap-3">
-            <Button variant="outline" asChild>
-              <Link to="/lessons">Browse Lessons</Link>
-            </Button>
-            <Button asChild className="bg-accent hover:bg-accent/90 text-accent-foreground">
-              <Link to="/practice"><Dumbbell className="mr-2 h-4 w-4" /> Practice Mode</Link>
-            </Button>
-          </div>
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold tracking-tight text-slate-900">Welcome back, {currentUser?.displayName || 'Student'}!</h1>
+          <p className="text-muted-foreground mt-2 text-lg">Here's your unified learning overview.</p>
         </div>
 
-        {/* Top Stats Row */}
+        {/* Stats Row */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-          <Card className="bg-primary text-primary-foreground border-none shadow-md">
-            <CardContent className="p-6">
-              <div className="flex justify-between items-start">
-                <div className="space-y-2">
-                  <p className="text-primary-foreground/80 text-sm font-medium">Overall Progress</p>
-                  <p className="text-3xl font-bold">{stats.overallMastery}%</p>
-                </div>
-                <Trophy className="h-5 w-5 text-primary-foreground/60" />
+          <Card className="bg-indigo-600 text-white border-none shadow-lg">
+            <CardContent className="p-6 flex justify-between items-center">
+              <div>
+                <p className="text-indigo-100 text-xs font-bold uppercase tracking-wider mb-1">Mastery</p>
+                <p className="text-3xl font-bold">{stats.overallMastery}%</p>
               </div>
+              <Trophy className="h-8 w-8 text-indigo-400" />
             </CardContent>
           </Card>
           
-          <Card className="shadow-sm">
-            <CardContent className="p-6">
-              <div className="flex justify-between items-start">
-                <div className="space-y-2">
-                  <p className="text-muted-foreground text-sm font-medium">Quizzes Done</p>
-                  <p className="text-3xl font-bold">{stats.quizzesCompleted}</p>
-                </div>
-                <BookOpen className="h-5 w-5 text-muted-foreground/60" />
+          <Card className="shadow-sm border-slate-200">
+            <CardContent className="p-6 flex justify-between items-center">
+              <div>
+                <p className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-1">Quizzes Done</p>
+                <p className="text-3xl font-bold text-slate-800">{stats.quizzesCompleted}</p>
               </div>
+              <BookOpen className="h-8 w-8 text-slate-200" />
             </CardContent>
           </Card>
 
-          <Card className="shadow-sm">
-            <CardContent className="p-6">
-              <div className="flex justify-between items-start">
-                <div className="space-y-2">
-                  <p className="text-muted-foreground text-sm font-medium">Avg. Score</p>
-                  <p className="text-3xl font-bold">{Math.round(stats.averageScore)}%</p>
-                </div>
-                <Target className="h-5 w-5 text-muted-foreground/60" />
+          <Card className="shadow-sm border-slate-200">
+            <CardContent className="p-6 flex justify-between items-center">
+              <div>
+                <p className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-1">Avg. Score</p>
+                <p className="text-3xl font-bold text-slate-800">{stats.averageScore}%</p>
               </div>
+              <Target className="h-8 w-8 text-slate-200" />
             </CardContent>
           </Card>
 
-          <Card className="shadow-sm">
-            <CardContent className="p-6">
-              <div className="flex justify-between items-start">
-                <div className="space-y-2">
-                  <p className="text-muted-foreground text-sm font-medium">Current Streak</p>
-                  <p className="text-3xl font-bold">{stats.currentStreak}</p>
-                </div>
-                <Sparkles className="h-5 w-5 text-amber-500/60" />
+          <Card className="shadow-sm border-slate-200">
+            <CardContent className="p-6 flex justify-between items-center">
+              <div>
+                <p className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-1">Day Streak</p>
+                <p className="text-3xl font-bold text-amber-500">{stats.currentStreak} 🔥</p>
               </div>
+              <Sparkles className="h-8 w-8 text-amber-100" />
             </CardContent>
           </Card>
         </div>
 
-        {/* Main Content Grid */}
         <div className="grid md:grid-cols-3 gap-8">
-          
-          {/* Left Column: Recommendation & Weak Concepts */}
           <div className="md:col-span-2 space-y-8">
-            
-            {/* Recommendation Card */}
-            <Card className="border-primary/20 shadow-md overflow-hidden relative">
-              <div className="absolute top-0 left-0 w-1 h-full bg-primary"></div>
+            {/* AI Recommendation Card */}
+            <Card className="border-indigo-100 shadow-md relative overflow-hidden bg-white">
+              <div className="absolute top-0 left-0 w-1.5 h-full bg-indigo-600"></div>
               <CardHeader className="pb-3">
-                <div className="flex items-center gap-2 mb-1">
-                  <Sparkles className="h-4 w-4 text-primary" />
-                  <span className="text-sm font-semibold text-primary uppercase tracking-wider">AI Recommended Next Step</span>
+                <div className="flex items-center gap-2 mb-1 text-indigo-600">
+                  <Sparkles className="h-4 w-4" />
+                  <span className="text-xs font-bold uppercase tracking-widest">AI Recommended Next Step</span>
                 </div>
-                <CardTitle className="text-2xl">{stats.recommendedLesson?.lesson?.title || "Explore New Topics"}</CardTitle>
+                <CardTitle className="text-2xl text-slate-900">{stats.recommendedLesson?.lesson?.title || "Explore Topics"}</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-muted-foreground mb-6">
-                  {stats.recommendedLesson?.reasoning || "You're doing great! Browse the library to find your next challenge."}
+                <p className="text-slate-500 mb-6 text-lg">
+                  {stats.recommendedLesson?.reasoning || "Ready for a new challenge? Browse our library!"}
                 </p>
-                {stats.recommendedLesson?.lesson ? (
-                  <Button size="lg" asChild>
-                    <Link to={`/quiz/${stats.recommendedLesson.lesson.id}`}>
+                {stats.recommendedLesson?.lesson && (
+                  <Button size="lg" className="bg-indigo-600 hover:bg-indigo-700 rounded-xl px-8" asChild>
+                    <Link to={`/quiz/${stats.recommendedLesson.lesson.id}`} state={{ topicName: stats.recommendedLesson.lesson.title }}>
                       Start Lesson <ArrowRight className="ml-2 h-4 w-4" />
                     </Link>
-                  </Button>
-                ) : (
-                  <Button size="lg" variant="outline" asChild>
-                    <Link to="/lessons">Browse Library</Link>
                   </Button>
                 )}
               </CardContent>
             </Card>
 
-            {/* Focus Areas */}
-            <Card className="shadow-sm">
-              <CardHeader className="flex flex-row items-center justify-between">
-                <div>
-                  <CardTitle className="flex items-center gap-2">
-                    <AlertCircle className="h-5 w-5 text-rose-500" />
-                    Focus Areas
-                  </CardTitle>
-                  <CardDescription>Concepts that need a little more practice</CardDescription>
-                </div>
-                <Button variant="ghost" size="sm" asChild className="hidden sm:flex">
-                  <Link to="/practice">View All</Link>
-                </Button>
+            {/* Focus Areas Card */}
+            <Card className="shadow-sm border-slate-100">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-slate-800">
+                  <AlertCircle className="h-5 w-5 text-rose-500" /> Focus Areas
+                </CardTitle>
+                <CardDescription>Targeted concepts to improve your mastery.</CardDescription>
               </CardHeader>
               <CardContent>
                 {stats.weakConcepts.length > 0 ? (
                   <div className="grid sm:grid-cols-2 gap-4">
-                    {stats.weakConcepts.map((concept) => (
-                      <div key={concept.id} className="flex flex-col p-4 rounded-xl border bg-muted/30">
-                        <div className="flex justify-between items-start mb-2">
-                          <span className="font-semibold">{concept.concept_name}</span>
-                          <Badge variant="outline" className="bg-rose-100 text-rose-700 border-rose-200 dark:bg-rose-900/30 dark:text-rose-400">
-                            Practice Available
-                          </Badge>
-                        </div>
-                        <div className="flex items-center justify-between mt-auto pt-4">
-                          <span className="px-2.5 py-0.5 rounded-full text-xs font-bold mastery-low">
-                            {Math.round(concept.mastery_percentage)}% Mastery
-                          </span>
-                          <Button size="sm" variant="secondary" asChild>
-                            <Link to={`/practice/${encodeURIComponent(concept.concept_name)}`}>Practice</Link>
+                    {stats.weakConcepts.map((concept) => {
+                      const lessonInfo = lessonsData.find(l => l.id === concept.concept_name);
+                      const displayName = lessonInfo ? lessonInfo.title : concept.concept_name;
+                      return (
+                        <div key={concept.concept_name} className="p-4 rounded-xl border border-slate-100 bg-slate-50/50 flex justify-between items-center">
+                          <div>
+                            <p className="font-bold text-slate-800">{displayName}</p>
+                            <p className="text-xs font-bold text-rose-600">{Math.round(concept.mastery_percentage)}% Mastery</p>
+                          </div>
+                          <Button size="sm" asChild variant="outline" className="rounded-lg border-rose-100 hover:bg-rose-50">
+                            <Link to={`/quiz/${concept.concept_name}`} state={{ topicName: displayName }}>Improve</Link>
                           </Button>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 ) : (
-                  <div className="text-center py-8 text-muted-foreground bg-muted/20 rounded-xl border border-dashed">
-                    <Trophy className="h-8 w-8 mx-auto mb-3 text-muted-foreground/50" />
-                    <p className="font-medium">No weak concepts detected!</p>
-                    <p className="text-sm mt-1">You're mastering everything you try.</p>
-                  </div>
+                  <p className="text-center py-6 text-slate-400 font-medium italic">No gaps detected. Excellent work!</p>
                 )}
               </CardContent>
             </Card>
           </div>
 
-          {/* Right Column: Recent Activity & Practice History */}
-          <div className="space-y-8">
-            
-            {/* Practice History */}
-            <Card className="shadow-sm">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-lg">
-                  <Dumbbell className="h-5 w-5 text-accent" />
-                  Recent Practice
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {stats.practiceHistory.length > 0 ? (
-                  <div className="space-y-4">
-                    {stats.practiceHistory.map((attempt) => (
-                      <div key={attempt.id} className="flex items-start justify-between pb-4 border-b last:border-0 last:pb-0">
-                        <div>
-                          <p className="font-medium text-sm line-clamp-1">
-                            {attempt.concept_name}
-                          </p>
-                          <p className="text-xs text-muted-foreground mt-1">
-                            {new Date(attempt.created).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
-                          </p>
-                        </div>
-                        <Badge variant="outline" className="ml-2 shrink-0 bg-accent/10 text-accent border-accent/20">
-                          {Math.round(attempt.score)}%
-                        </Badge>
+          {/* Recent Quizzes List */}
+          <Card className="shadow-sm border-slate-100 h-fit bg-white">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-lg text-slate-800">
+                <Clock className="h-5 w-5 text-slate-400" /> Recent Quizzes
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {stats.recentAttempts.map((attempt) => {
+                  const lessonInfo = lessonsData.find(l => l.id === attempt.topic);
+                  const displayName = lessonInfo ? lessonInfo.title : (attempt.topic || 'Math Quiz');
+                  return (
+                    <div key={attempt.id} className="flex justify-between items-center pb-4 border-b border-slate-50 last:border-0 last:pb-0">
+                      <div>
+                        <p className="font-bold text-sm text-slate-800">{displayName}</p>
+                        <p className="text-[10px] text-slate-400 font-medium uppercase tracking-tighter">
+                          {new Date(attempt.created?.seconds * 1000).toLocaleDateString()}
+                        </p>
                       </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-6 text-muted-foreground">
-                    <p className="text-sm">No practice sessions yet.</p>
-                    <Button variant="link" size="sm" asChild className="mt-2">
-                      <Link to="/practice">Start Practicing</Link>
-                    </Button>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Quiz Activity */}
-            <Card className="shadow-sm">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-lg">
-                  <Clock className="h-5 w-5 text-muted-foreground" />
-                  Recent Quizzes
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {stats.recentAttempts.length > 0 ? (
-                  <div className="space-y-4">
-                    {stats.recentAttempts.map((attempt) => (
-                      <div key={attempt.id} className="flex items-start justify-between pb-4 border-b last:border-0 last:pb-0">
-                        <div>
-                          <p className="font-medium text-sm line-clamp-1">
-                            {attempt.concepts_tested?.[0] || 'Math Quiz'}
-                          </p>
-                          <p className="text-xs text-muted-foreground mt-1">
-                            {new Date(attempt.created).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
-                          </p>
-                        </div>
-                        <Badge variant={attempt.score >= 80 ? 'default' : attempt.score >= 60 ? 'secondary' : 'destructive'} className="ml-2 shrink-0">
-                          {Math.round(attempt.score)}%
-                        </Badge>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-6 text-muted-foreground">
-                    <p className="text-sm">No recent quizzes.</p>
-                  </div>
-                )}
-                
-                <div className="mt-6 pt-4 border-t">
-                  <Button variant="ghost" className="w-full text-sm" asChild>
-                    <Link to="/progress">View Full History</Link>
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
+                      <Badge className="rounded-lg font-bold" variant={attempt.score >= 70 ? "secondary" : "destructive"}>
+                        {Math.round(attempt.score)}%
+                      </Badge>
+                    </div>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
-    </>
+    </div>
   );
 };
 

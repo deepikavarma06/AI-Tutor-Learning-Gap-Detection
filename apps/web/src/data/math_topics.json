@@ -1,0 +1,106 @@
+[
+  {
+    "id": "Basic_Arithmetic",
+    "title": "Basic Arithmetic",
+    "description": "Learn addition, subtraction, multiplication and division.",
+    "difficulty": "Easy",
+    "category": "Arithmetic",
+    "recommended": true
+  },
+  {
+    "id": "Introduction_to_Algebra",
+    "title": "Introduction to Algebra",
+    "description": "Learn variables, expressions and basic algebraic operations.",
+    "difficulty": "Easy",
+    "category": "Algebra",
+    "recommended": true
+  },
+  {
+    "id": "Linear_Equations",
+    "title": "Linear Equations",
+    "description": "Solve single variable linear equations.",
+    "difficulty": "Easy",
+    "category": "Algebra",
+    "recommended": false
+  },
+  {
+    "id": "Decimals",
+    "title": "Decimals",
+    "description": "Understand decimal numbers and operations.",
+    "difficulty": "Easy",
+    "category": "Numbers",
+    "recommended": false
+  },
+  {
+    "id": "Fractions",
+    "title": "Fractions",
+    "description": "Learn fractions, simplification, and operations.",
+    "difficulty": "Easy",
+    "category": "Numbers",
+    "recommended": false
+  },
+  {
+    "id": "Basic_Geometry",
+    "title": "Basic Geometry",
+    "description": "Understand points, lines, angles and shapes.",
+    "difficulty": "Easy",
+    "category": "Geometry",
+    "recommended": false
+  },
+  {
+    "id": "Area and Perimeter",
+    "title": "Area and Perimeter",
+    "description": "Calculate area and perimeter of shapes.",
+    "difficulty": "Medium",
+    "category": "Geometry",
+    "recommended": false
+  },
+  {
+    "id": "Integers",
+    "title": "Integers",
+    "description": "Learn positive and negative numbers.",
+    "difficulty": "Easy",
+    "category": "Numbers",
+    "recommended": false
+  },
+  {
+    "id": "Exponents",
+    "title": "Exponents",
+    "description": "Understand powers and exponential notation.",
+    "difficulty": "Medium",
+    "category": "Algebra",
+    "recommended": false
+  },
+  {
+    "id": "Percentages",
+    "title": "Percentages",
+    "description": "Learn percentage calculations and applications.",
+    "difficulty": "Easy",
+    "category": "Arithmetic",
+    "recommended": false
+  },
+  {
+    "id": "Ratios_and_Proportions",
+    "title": "Ratios and Proportions",
+    "description": "Understand relationships between quantities.",
+    "difficulty": "Medium",
+    "category": "Arithmetic",
+    "recommended": false
+  },
+  {
+    "id": "Probability_Basics",
+    "title": "Probability Basics",
+    "description": "Learn the basics of probability and chance.",
+    "difficulty": "Medium",
+    "category": "Statistics",
+    "recommended": false
+  },
+  {
+    "id": "Rational_Numbers",
+    "title": "Rational Numbers",
+    "description": "Understand rational numbers and operations.",
+    "difficulty": "Medium",
+    "category": "Numbers",
+    "recommended": false
+  }
+]

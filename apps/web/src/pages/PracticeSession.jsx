@@ -19,15 +19,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 import { Helmet } from "react-helmet";
 
-import {
-  CheckCircle2,
-  XCircle,
-  ArrowRight,
-  RotateCcw,
-  TrendingUp
-} from "lucide-react";
-
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 
 const PracticeSession = () => {
 
@@ -52,7 +44,8 @@ const PracticeSession = () => {
   const [isFinished, setIsFinished] = useState(false);
   const [results, setResults] = useState(null);
 
-  // Fetch Questions from Firebase
+
+  // FETCH QUESTIONS
   useEffect(() => {
 
     const fetchQuestions = async () => {
@@ -66,13 +59,38 @@ const PracticeSession = () => {
 
         const snapshot = await getDocs(q);
 
-        const data = snapshot.docs.map(doc => ({
+        let data = snapshot.docs.map(doc => ({
           id: doc.id,
           ...doc.data()
         }));
 
+
+        // If no questions → generate from AI
         if (data.length === 0) {
-          throw new Error("No practice questions found for this concept.");
+
+          const response = await fetch("http://localhost:3001/ai/adaptiveLesson", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+              mistakes: [
+                {
+                  concept: decodedConcept
+                }
+              ]
+            })
+          });
+
+          const aiData = await response.json();
+
+          data = aiData.quiz.map((q, index) => ({
+            id: `ai-${index}`,
+            question_text: q.question,
+            options: q.options,
+            correct_answer: q.answer
+          }));
+
         }
 
         const shuffled = data.sort(() => 0.5 - Math.random()).slice(0, 10);
@@ -216,9 +234,7 @@ const PracticeSession = () => {
 
   if (isFinished && results) {
 
-    const { score, masteryUpdate } = results;
-
-    const isGood = score >= 70;
+    const { score } = results;
 
     return (
 
