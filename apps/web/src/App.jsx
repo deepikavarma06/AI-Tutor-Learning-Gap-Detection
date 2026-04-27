@@ -16,6 +16,8 @@ import ProgressPage from './pages/ProgressPage.jsx';
 import PracticeMode from './pages/PracticeMode.jsx';
 import PracticeSession from './pages/PracticeSession.jsx';
 
+import LessonPlayer from "./pages/LessonPlayer"; // Import your new slide file
+
 import { seedLessons } from "@/lib/seedLessons";
 seedLessons();
 
@@ -43,6 +45,15 @@ function App() {
                   <LessonBrowser />
                 </ProtectedRoute>
               } />
+
+              <Route 
+                path="/study/:lessonId" 
+                element={
+                  <ProtectedRoute>
+                    <LessonPlayer />
+                  </ProtectedRoute>
+                } 
+              />
 
               <Route path="/quiz/:quizId" element={
                 <ProtectedRoute>

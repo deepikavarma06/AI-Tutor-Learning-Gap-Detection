@@ -194,7 +194,7 @@ const StudentDashboard = () => {
                 </p>
                 {stats.recommendedLesson?.lesson && (
                   <Button size="lg" className="bg-indigo-600 hover:bg-indigo-700 rounded-xl px-8" asChild>
-                    <Link to={`/quiz/${stats.recommendedLesson.lesson.id}`} state={{ topicName: stats.recommendedLesson.lesson.title }}>
+                    <Link to={`/study/${stats.recommendedLesson.lesson.id}`} state={{ topicName: stats.recommendedLesson.lesson.title }}>
                       Start Lesson <ArrowRight className="ml-2 h-4 w-4" />
                     </Link>
                   </Button>

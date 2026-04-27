@@ -161,11 +161,16 @@ const PracticeMode = () => {
                           <span className="text-[10px] font-bold uppercase tracking-widest text-rose-600 bg-rose-50 px-2 py-1 rounded">Focus Required</span>
                           <span className="font-bold text-slate-900">{Math.round(concept.mastery_percentage)}%</span>
                         </div>
-                        <CardTitle className="text-lg">{concept.concept_name}</CardTitle>
+                        <CardTitle className="text-lg">{displayName}</CardTitle>
                       </CardHeader>
                       <CardContent>
-                        <Progress value={concept.mastery_percentage} className="h-2 mb-6" indicatorColor="bg-rose-500" />
-                        <Button variant="outline" className="w-full py-5 rounded-xl border-slate-200 hover:bg-slate-50 font-semibold" asChild>
+                        <Progress 
+                          value={concept.mastery_percentage} // or whatever variable you use for the percentage
+                          className={`h-2 bg-slate-100 [&>div]:transition-all [&>div]:${
+                            concept.mastery_percentage >= 85 ? 'bg-indigo-600' : 
+                            concept.mastery_percentage >= 70 ? 'bg-amber-500' : 'bg-rose-500'
+                          }`}
+                        />                        <Button variant="outline" className="w-full py-5 rounded-xl border-slate-200 hover:bg-slate-50 font-semibold" asChild>
                           <Link to={`/quiz/${concept.concept_name}`} state={{ topicName: displayName }}>
                             Resume Practice
                           </Link>

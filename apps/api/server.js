@@ -80,6 +80,46 @@ app.post("/api/chat", async (req, res) => {
   }
 });
 
+/* --- AI SLIDE GENERATION API --- */
+app.post("/api/generate-slides", async (req, res) => {
+  const { topic } = req.body;
+  console.log("Received request for slides on topic:", topic); // Add this for debugging
+
+  try {
+    const completion = await groq.chat.completions.create({
+      messages: [
+        { 
+          role: "system", 
+          content: `You are an expert Math Professor. Create a structured lesson for the topic: "${topic}".
+          Output MUST be a JSON object with a key "slides" which is an array of objects.
+          Each slide object needs: 
+          - "id": number
+          - "type": "definition", "concept", "example", or "summary"
+          - "heading": A clear, short title
+          - "content": A detailed, academic explanation (3-4 sentences)
+          
+          STRICT RULES:
+          1. Generate EXACTLY 30 slides.
+          2. Each slide's "content" MUST be between 4 to 6 lines max. Use short, punchy sentences.
+          3. Use a structured flow: 
+             - Slides 1-5: Introduction & Definitions.
+             - Slides 6-15: Core Concepts (1 idea per slide).
+             - Slides 16-25: 3 Detailed Examples (broken down over multiple slides).
+             - Slides 26-30: Common Pitfalls & Summary.` 
+        }
+      ],
+      model: "llama-3.3-70b-versatile",
+      response_format: { type: "json_object" }
+    });
+
+    const aiResponse = JSON.parse(completion.choices[0].message.content);
+    res.json({ slides: aiResponse.slides });
+  } catch (error) {
+    console.error("Slide Generation Error:", error);
+    res.status(500).json({ error: "Failed to generate lesson slides" });
+  }
+});
+
 /* --- QUIZ GENERATION API --- */
 app.post("/quiz/generate", async (req, res) => {
   const { topic } = req.body;
