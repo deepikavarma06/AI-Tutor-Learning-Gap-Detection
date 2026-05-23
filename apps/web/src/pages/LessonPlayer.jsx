@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ChevronLeft, ChevronRight, Sparkles, BookOpen, GraduationCap } from "lucide-react";
 import DashboardHeader from "@/components/DashboardHeader";
+import ReactMarkdown from 'react-markdown';
 
 const LessonPlayer = () => {
   const { lessonId } = useParams();
@@ -92,12 +93,19 @@ const LessonPlayer = () => {
             
             {/* Content: Enforced 6-line spacing */}
             <div className="text-xl md:text-2xl text-slate-600 leading-relaxed font-medium">
-            {/* We split by new lines or periods to ensure it looks like a clean list if needed */}
-            {currentSlide?.content.split('. ').map((sentence, idx) => (
-                <p key={idx} className="mb-4 last:mb-0">
-                {sentence.trim()}{sentence.endsWith('.') ? '' : '.'}
-                </p>
-            ))}
+              {currentSlide?.content.split('. ').map((sentence, idx) => {
+                // CLEANING LOGIC: Remove ### and ** before rendering
+                const cleanSentence = sentence
+                  .replace(/###/g, '') // Removes all ###
+                  .replace(/\*\*/g, '') // Removes all **
+                  .trim();
+
+                return (
+                  <p key={idx} className="mb-4 last:mb-0">
+                    {cleanSentence}{cleanSentence.endsWith('.') ? '' : '.'}
+                  </p>
+                );
+              })}
             </div>
         </div>
         </Card>

@@ -102,5 +102,61 @@
     "difficulty": "Medium",
     "category": "Numbers",
     "recommended": false
+  },
+  {
+    "id": "Trigonometry_Basics",
+    "title": "Basic Trigonometry",
+    "description": "Learn about angles, sine, cosine and tangent.",
+    "difficulty": "Medium",
+    "category": "Geometry",
+    "recommended": false
+  },
+  {
+    "id": "Quadratic_Equations",
+    "title": "Quadratic Equations",
+    "description": "Solve second-degree equations using factoring and the quadratic formula.",
+    "difficulty": "Hard",
+    "category": "Algebra",
+    "recommended": false
+  },
+  {
+    "id": "Complex_Numbers",
+    "title": "Complex Numbers",
+    "description": "Work with imaginary numbers and complex planes.",
+    "difficulty": "Hard",
+    "category": "Numbers",
+    "recommended": false
+  },
+  {
+    "id": "Logarithmic_Functions",
+    "title": "Logarithmic Functions",
+    "description": "Understand logarithms, their properties, and solving log equations.",
+    "difficulty": "Hard",
+    "category": "Algebra",
+    "recommended": false
+  },
+  {
+    "id": "Calculus_Limits",
+    "title": "Introduction to Limits",
+    "description": "Understand the conceptual foundation of calculus through limits.",
+    "difficulty": "Hard",
+    "category": "Calculus",
+    "recommended": false
+  },
+  {
+    "id": "Permutations_Combinations",
+    "title": "Permutations and Combinations",
+    "description": "Advanced counting techniques and factorial notation.",
+    "difficulty": "Hard",
+    "category": "Statistics",
+    "recommended": false
+  },
+  {
+    "id": "Trigonometric_Identities",
+    "title": "Trigonometric Identities",
+    "description": "Prove and apply complex trigonometric proofs and formulas.",
+    "difficulty": "Hard",
+    "category": "Geometry",
+    "recommended": false
   }
 ]

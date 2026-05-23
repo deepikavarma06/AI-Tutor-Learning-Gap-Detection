@@ -40,7 +40,7 @@ app.post("/api/chat", async (req, res) => {
     const messages = [
       { 
         role: "system", 
-        content: "You are a helpful Math Tutor for CBIT students. Solve doubts step-by-step." 
+        content: "You are a helpful Math Tutor for students. Solve doubts step-by-step." 
       }
     ];
 
@@ -83,7 +83,7 @@ app.post("/api/chat", async (req, res) => {
 /* --- AI SLIDE GENERATION API --- */
 app.post("/api/generate-slides", async (req, res) => {
   const { topic } = req.body;
-  console.log("Received request for slides on topic:", topic); // Add this for debugging
+  console.log("Generating 30-slide lesson for:", topic);
 
   try {
     const completion = await groq.chat.completions.create({
@@ -115,8 +115,8 @@ app.post("/api/generate-slides", async (req, res) => {
     const aiResponse = JSON.parse(completion.choices[0].message.content);
     res.json({ slides: aiResponse.slides });
   } catch (error) {
-    console.error("Slide Generation Error:", error);
-    res.status(500).json({ error: "Failed to generate lesson slides" });
+    console.error("GROQ ERROR:", error.message);
+    res.status(500).json({ error: "Server Error", message: "AI timed out. Try a more specific topic." });
   }
 });
 
